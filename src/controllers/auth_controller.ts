@@ -5,58 +5,50 @@ import jwt from "jsonwebtoken";
 import { OAuth2Client } from "google-auth-library";
 import { Document } from "mongoose";
 
-const client = new OAuth2Client({
-  clientId: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  redirectUri: process.env.GOOGLE_REDIRECT_URI,
-});
-
-const accessTokenExpiration = parseInt(process.env.JWT_EXPIRATION_MILL);
-
+const client = new OAuth2Client();
 const googleSignin = async (req: Request, res: Response) => {
+  console.log(req.body);
   try {
-    const { tokens } = await client.getToken({
-      code: req.body.code,
-    });
     const ticket = await client.verifyIdToken({
-      idToken: tokens.id_token,
+      idToken: req.body.credential,
+      audience: process.env.GOOGLE_CLIENT_ID,
     });
-
     const payload = ticket.getPayload();
     const email = payload?.email;
-    const fullName = payload?.name;
+    const firstName = payload?.given_name;
+    const lastName = payload?.family_name;
     if (email != null) {
       let user = await User.findOne({ email: email });
       if (user == null) {
         user = await User.create({
-          fullName,
+          firstName,
+          lastName,
           email,
+          password: "",
           imgUrl: payload?.picture,
         });
       }
-
       const tokens = await generateTokens(user);
-      res.cookie("refresh", tokens.refreshToken, {
-        httpOnly: true,
-        path: "/auth",
+      res.status(200).send({
+        firstName: user.firstName,
+        lastName: user.firstName,
+        email: user.email,
+        _id: user._id,
+        imgUrl: user.imgUrl,
+        ...tokens,
       });
-      res.cookie("access", tokens.accessToken, {
-        httpOnly: true,
-        maxAge: accessTokenExpiration,
-      });
-      return res.sendStatus(200);
     }
-    return res.status(400).send("error fetching user data from google");
   } catch (err) {
     return res.status(400).send(err.message);
   }
 };
 
 const register = async (req: Request, res: Response) => {
-  const fullName: string = req.body.fullName;
-  const email: string = req.body.email;
-  const password: string = req.body.password;
-  const imgUrl: string = req.body.imgUrl;
+  const firstName = req.body.firstName;
+  const lastName = req.body.lastName;
+  const email = req.body.email;
+  const password = req.body.password;
+  const imgUrl = req.body.imgUrl;
   if (!email || !password) {
     return res.status(400).send("missing email or password");
   }
@@ -67,27 +59,22 @@ const register = async (req: Request, res: Response) => {
     }
     const salt = await bcrypt.genSalt(10);
     const encryptedPassword = await bcrypt.hash(password, salt);
-    const user = await User.create({
-      fullName,
+    const rs2 = await User.create({
+      firstName,
+      lastName,
       email,
       password: encryptedPassword,
       imgUrl: imgUrl,
     });
-    const tokens = await generateTokens(user);
-    res.cookie("refresh", tokens.refreshToken, {
-      httpOnly: true,
-      path: "/auth",
+    const tokens = await generateTokens(rs2);
+    res.status(201).send({
+      firstname: rs2.firstName,
+      lastName: rs2.lastName,
+      email: rs2.email,
+      _id: rs2._id,
+      imgUrl: rs2.imgUrl,
+      ...tokens,
     });
-    res.cookie("access", tokens.accessToken, {
-      httpOnly: true,
-      maxAge: accessTokenExpiration,
-    });
-    const {
-      password: userPassword,
-      refreshTokens,
-      ...userWithoutPassword
-    } = user.toObject();
-    return res.status(201).json(userWithoutPassword);
   } catch (err) {
     return res.status(400).send("error missing email or password");
   }
@@ -103,20 +90,19 @@ const generateTokens = async (user: Document & IUser) => {
   );
   if (user.refreshTokens == null) {
     user.refreshTokens = [refreshToken];
-  } else if (!user.refreshTokens.includes(refreshToken)) {
+  } else {
     user.refreshTokens.push(refreshToken);
   }
   await user.save();
   return {
-    accessToken,
-    refreshToken,
+    accessToken: accessToken,
+    refreshToken: refreshToken,
   };
 };
 
 const login = async (req: Request, res: Response) => {
-  const email: string = req.body.email;
-  const password: string = req.body.password;
-
+  const email = req.body.email;
+  const password = req.body.password;
   if (!email || !password) {
     return res.status(400).send("missing email or password");
   }
@@ -131,23 +117,16 @@ const login = async (req: Request, res: Response) => {
     }
 
     const tokens = await generateTokens(user);
-    res.cookie("refresh", tokens.refreshToken, {
-      httpOnly: true,
-      path: "/auth",
-    });
-    res.cookie("access", tokens.accessToken, {
-      httpOnly: true,
-      maxAge: accessTokenExpiration,
-    });
-    return res.sendStatus(200);
+    return res.status(200).send(tokens);
   } catch (err) {
     return res.status(400).send("error missing email or password");
   }
 };
 
 const logout = async (req: Request, res: Response) => {
-  const refreshToken = req.cookies.refresh;
-  if (!refreshToken) return res.sendStatus(401);
+  const authHeader = req.headers["authorization"];
+  const refreshToken = authHeader && authHeader.split(" ")[1]; // Bearer <token>
+  if (refreshToken == null) return res.sendStatus(401);
   jwt.verify(
     refreshToken,
     process.env.JWT_REFRESH_SECRET,
@@ -168,8 +147,6 @@ const logout = async (req: Request, res: Response) => {
             (t) => t !== refreshToken
           );
           await userDb.save();
-          res.clearCookie("refresh", { path: "/auth" });
-          res.clearCookie("access");
           return res.sendStatus(200);
         }
       } catch (err) {
@@ -180,8 +157,9 @@ const logout = async (req: Request, res: Response) => {
 };
 
 const refresh = async (req: Request, res: Response) => {
-  const refreshToken = req.cookies.refresh;
-  if (!refreshToken) return res.sendStatus(401);
+  const authHeader = req.headers["authorization"];
+  const refreshToken = authHeader && authHeader.split(" ")[1]; // Bearer <token>
+  if (refreshToken == null) return res.sendStatus(401);
   jwt.verify(
     refreshToken,
     process.env.JWT_REFRESH_SECRET,
@@ -214,18 +192,12 @@ const refresh = async (req: Request, res: Response) => {
         );
         userDb.refreshTokens.push(newRefreshToken);
         await userDb.save();
-
-        res.cookie("refresh", newRefreshToken, {
-          httpOnly: true,
-          path: "/auth",
+        return res.status(200).send({
+          accessToken: accessToken,
+          refreshToken: refreshToken,
         });
-        res.cookie("access", accessToken, {
-          httpOnly: true,
-          maxAge: accessTokenExpiration,
-        });
-        return res.sendStatus(200);
       } catch (err) {
-        res.status(401).send(err.message);
+        res.sendStatus(401).send(err.message);
       }
     }
   );
