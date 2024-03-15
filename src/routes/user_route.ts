@@ -1,16 +1,28 @@
 import express from "express";
 const router = express.Router();
+import UserController from "../controllers/user_controller";
 import authMiddleware from "../common/auth_middleware";
-import userController from "../controllers/user_controller";
 
-router.get("/", authMiddleware, userController.get.bind(userController));
+router.get("/users", authMiddleware, UserController.get.bind(UserController));
 
-router.get("/:id", authMiddleware, userController.getById.bind(userController));
+router.get(
+  "/user:id",
+  authMiddleware,
+  UserController.getById.bind(UserController)
+);
 
-router.post("/", authMiddleware, userController.post.bind(userController));
+router.post("/user", authMiddleware, UserController.post.bind(UserController));
 
-router.put("/:id", authMiddleware, userController.putById.bind(userController));
+router.put(
+  "/user:id",
+  authMiddleware,
+  UserController.putById.bind(UserController)
+);
 
-router.delete("/:id", authMiddleware, userController.deleteById.bind(userController));
+router.delete(
+  "/user:id",
+  authMiddleware,
+  UserController.deleteById.bind(UserController)
+);
 
 export default router;
