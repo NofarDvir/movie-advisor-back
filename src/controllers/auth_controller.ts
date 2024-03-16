@@ -31,7 +31,7 @@ const googleSignin = async (req: Request, res: Response) => {
       const tokens = await generateTokens(user);
       res.status(200).send({
         firstName: user.firstName,
-        lastName: user.firstName,
+        lastName: user.lastName,
         email: user.email,
         _id: user._id,
         imgUrl: user.imgUrl,
@@ -90,13 +90,13 @@ const generateTokens = async (user: Document & IUser) => {
   );
   if (user.refreshTokens == null) {
     user.refreshTokens = [refreshToken];
-  } else {
+  } else if (!user.refreshTokens.includes(refreshToken)) {
     user.refreshTokens.push(refreshToken);
   }
   await user.save();
   return {
-    accessToken: accessToken,
-    refreshToken: refreshToken,
+    accessToken,
+    refreshToken,
   };
 };
 
@@ -194,7 +194,7 @@ const refresh = async (req: Request, res: Response) => {
         await userDb.save();
         return res.status(200).send({
           accessToken: accessToken,
-          refreshToken: refreshToken,
+          refreshToken: newRefreshToken,
         });
       } catch (err) {
         res.sendStatus(401).send(err.message);
