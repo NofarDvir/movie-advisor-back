@@ -1,5 +1,8 @@
+import env from "dotenv";
+env.config();
 import express, { Express } from "express";
 import mongoose from "mongoose";
+import cookieParser from "cookie-parser"
 import bodyParser from "body-parser";
 import authRoute from "./routes/auth_route";
 import userRoute from "./routes/user_route";

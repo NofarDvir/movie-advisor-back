@@ -5,7 +5,6 @@ import authMiddleware from "../common/auth_middleware";
 
 router.get(
     "/search/:search",
-    authMiddleware,
     MovieController.search.bind(MovieController)
   );
   
