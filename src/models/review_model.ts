@@ -1,17 +1,20 @@
-import mongoose, { ObjectId } from "mongoose";
+import mongoose from "mongoose";
+import { IComment } from "./comment_model";
 
 export interface IReview {
-  _id?: ObjectId;
+  _id?: string;
   movieTitle: string;
   description: string;
-  score: 1 | 2 | 3 | 4 | 5;
+  score: number;
   reviewImgUrl: string;
-  author: ObjectId;
   timeStamp: Date;
-  likes: string[];
-  comments: ObjectId[];
-  isLiked?: boolean;
-  likesCount?: number;
+  owner: string;
+  userFullName: string;
+  userImgUrl: string;
+  commentsCount: number;
+  likesCount: number;
+  isLiked: object[];
+  comments?: IComment[];
 }
 
 const reviewSchema = new mongoose.Schema<IReview>({
@@ -31,26 +34,37 @@ const reviewSchema = new mongoose.Schema<IReview>({
     type: String,
     required: true,
   },
-  author: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
   timeStamp: {
     type: Date,
-    default: Date.now,
     required: true,
   },
-  likes: {
-    type: [String],
-    default: [],
+  owner: {
+    type: String,
+    required: true,
+  },
+  userFullName: {
+    type: String,
+    required: true,
+  },
+  userImgUrl: {
+    type: String,
+    required: true,
+  },
+  commentsCount: {
+    type: Number,
+    required: true,
+  },
+  likesCount: {
+    type: Number,
+    required: true,
+  },
+  isLiked: {
+    type: [Object],
     required: true,
   },
   comments: {
-    type: [mongoose.Schema.Types.ObjectId],
-    ref: "Comment",
-    default: [],
-    required: true,
+    type: [Object],
+    required: false,
   },
 });
 
