@@ -2,32 +2,49 @@ import env from "dotenv";
 env.config();
 import express, { Express } from "express";
 import mongoose from "mongoose";
-import cookieParser from "cookie-parser"
+import cookieParser from "cookie-parser";
 import bodyParser from "body-parser";
 import authRoute from "./routes/auth_route";
 import userRoute from "./routes/user_route";
 import reviewRoute from "./routes/review_route";
 import commentRoute from "./routes/comment_route";
-
+import movieRoute from "./routes/movie_route";
+import fileRoute from "./routes/file_route";
+var cors = require("cors");
 
 const initApp = (): Promise<Express> => {
-    const promise = new Promise<Express>((resolve) => {
-        const app = express();
-        app.use(bodyParser.json());
-        app.use(bodyParser.urlencoded({ extended: true }));
-        app.post("/register", authRoute);
-        app.post("/login", authRoute);
-        app.get("/users", userRoute);
-        app.get("/refresh", authRoute);
-        app.get("/logout", authRoute);
-        app.get("/reviews", reviewRoute);
-        app.get("/comments", commentRoute);
+  const promise = new Promise<Express>((resolve) => {
 
-        // app.use("/auth", authRoute);
-        resolve(app);
-        });
+    const db = mongoose.connection;
+    db.on("error", (error) => console.error(error));
+    db.once("open", () => console.log("Connected to Database"));
+    
+    const dbUrl = process.env.DB_URL;
+    mongoose.connect(dbUrl!).then(() => {
+      const app = express();
+      app.use(bodyParser.json());
+      app.use(bodyParser.urlencoded({ extended: true }));
+      const corsOptions = {
+        origin:
+          process.env.NODE_ENV !== "production"
+            ? `http://${process.env.DOMAIN_BASE}:${process.env.FRONTEND_PORT}`
+            : `https://${process.env.DOMAIN_BASE}`,
+        credentials: true,
+      };
+      app.use(cors(corsOptions));
+      app.use(cookieParser());
+      app.use("/auth", authRoute);
+      app.use("/users", userRoute);
+      app.use("/reviews", reviewRoute);
+      app.use("/comments", commentRoute);
+      app.use("/movies", movieRoute);
+      app.use("/public", express.static("public"));
+      app.use("/file", fileRoute);
+
+      resolve(app);
     });
-return promise;
+  });
+  return promise;
 };
 
 export default initApp;
