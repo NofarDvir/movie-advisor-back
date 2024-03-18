@@ -10,7 +10,7 @@ const authMiddleware = (
   res: Response,
   next: NextFunction
 ) => {
-    
+    console.log("auth middleware", req.cookies);
     const authHeader = req.headers["authorization"];
     const token = authHeader && authHeader.split(" ")[1]; // Bearer <token>
     if (token == null) return res.sendStatus(401);
