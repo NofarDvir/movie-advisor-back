@@ -1,18 +1,23 @@
 import express from "express";
 const router = express.Router();
-import MovieController from "../controllers/movie_controller";
-import authMiddleware from "../common/auth_middleware";
+import multer from "multer";
 
-router.get(
-  "/search/:search",
-  authMiddleware,
-  MovieController.search.bind(MovieController)
-);
+const base = `${process.env.NODE_ENV !== "production" ? "http" : "https"}://${
+  process.env.DOMAIN_BASE
+}:${process.env.PORT}/`;
 
-router.get(
-  "/:movieId",
-  authMiddleware,
-  MovieController.getById.bind(MovieController)
-);
+const storage = multer.diskStorage({
+  destination: function (_req, _file, cb) {
+    cb(null, "public/");
+  },
+  filename: function (_req, file, cb) {
+    const ext = file.originalname.split(".").filter(Boolean).slice(1).join(".");
+    cb(null, Date.now() + "." + ext);
+  },
+});
+const upload = multer({ storage: storage });
 
-export default router;
+router.post("/", upload.single("file"), (req, res) => {
+  res.status(200).send({ url: base + (req as any).file.path });
+});
+export = router;
