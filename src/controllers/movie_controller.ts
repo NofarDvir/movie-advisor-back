@@ -1,9 +1,9 @@
 import fetch from "node-fetch";
 import { Response } from "express";
-import { AuthResquest } from "../common/auth_middleware";
+import { AuthRequest } from "../common/auth_middleware";
 
 class MovieController {
-  async search(req: AuthResquest, res: Response) {
+  async search(req: AuthRequest, res: Response) {
     const searchTerm = req.params.search;
 
     try {
@@ -21,12 +21,12 @@ class MovieController {
     }
   }
 
-  async getById(req: AuthResquest, res: Response) {
-    const searchTerm = req.params.search;
+  async getById(req: AuthRequest, res: Response) {
+    const movieId = req.params.movieId;
 
     try {
       const response = await fetch(
-        `https://api.themoviedb.org/3/search/movie?query=${searchTerm}`,
+        `https://api.themoviedb.org/3/movie/${movieId}`,
         {
           headers: { Authorization: `Bearer ${process.env.MOVIE_API_APP_KEY}` },
         }
