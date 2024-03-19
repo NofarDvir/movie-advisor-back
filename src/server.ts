@@ -10,7 +10,7 @@ initApp().then((app) => {
     definition: {
       openapi: "3.0.0",
       info: {
-        title: "WatchIt! REST API",
+        title: "Movie Advisor REST API",
         version: "1.0.1",
         description:
           "REST server including authentication using JWT and refresh token",
