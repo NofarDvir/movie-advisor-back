@@ -10,7 +10,7 @@ import reviewRoute from "./routes/review_route";
 import commentRoute from "./routes/comment_route";
 import movieRoute from "./routes/movie_route";
 import fileRoute from "./routes/file_route";
-var cors = require("cors");
+const cors = require("cors");
 
 const initApp = (): Promise<Express> => {
   const promise = new Promise<Express>((resolve) => {
