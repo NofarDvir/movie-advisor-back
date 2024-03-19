@@ -3,37 +3,7 @@ const router = express.Router();
 import ReviewController from "../controllers/review_controller";
 import authMiddleware from "../common/auth_middleware";
 
-/**
- * @swagger
- * tags:
- *   name: Reviews
- *   description: The Reviews API
- */
-
-/**
- * @swagger
- * /reviews:
- *   get:
- *     summary: Get all reviews
- *     tags: [Reviews]
- *     security:
- *       - bearerAuth: []
- *     responses:
- *       200:
- *         description: A list of reviews
- *         content:
- *           application/json:
- *             schema:
- *               type: array
- *               items:
- *                 $ref: '#/components/schemas/Review'
- *       401:
- *         description: Unauthorized, user needs to be signed in
- *       500:
- *         description: Unexpected error
- */
-
-router.get("/", authMiddleware, ReviewController.get.bind(ReviewController));
+router.get("/", ReviewController.get.bind(ReviewController));
 
 /**
  * @swagger

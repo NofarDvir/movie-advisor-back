@@ -6,6 +6,36 @@ import authMiddleware from "../common/auth_middleware";
 /**
  * @swagger
  * tags:
+ * name: User
+ * description: The Files API
+ */
+
+/**
+ * @swagger
+ * /user/connected:
+ *   get:
+ *     summary: Get connected user
+ *     tags: [User]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Connected user data
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/User'
+ *       401:
+ *         description: Unauthorized, user needs to be signed in
+ *       500:
+ *         description: Unexpected error
+ */
+
+router.get(
+  "/connected",
+/**
+ * @swagger
+ * tags:
  *   name: User
  *   description: The Users API
  */

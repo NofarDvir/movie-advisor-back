@@ -9,98 +9,29 @@ class CommentController extends BaseController<IComment> {
     super(Comment);
   }
 
-  async get(req: AuthRequest, res: Response) {
-    console.log("Get all Comments: ");
-    super.get(req, res);
-  }
-
-  async getById(req: AuthRequest, res: Response) {
-    console.log("Get Comment by Id:" + req.params.id);
-    super.getById(req, res);
-  }
-
-  async postComment(req: AuthRequest, res: Response) {
-    console.log("Post Comment: " + req.body);
-    const { reviewId, description, userFullName, userImgUrl } = req.body;
-    const owner = req.user._id;
-
+  async post(req: AuthRequest, res: Response) {
     try {
-      const review = await Review.findOne({ _id: reviewId });
+      const userId = req.user._id;
+      const { description, reviewId } = req.body;
+
+      const review = await Review.findById(reviewId);
       if (!review) {
-        return res.status(404).json({ message: "Review not found" });
+        res.status(404).json({ message: "Review not found" });
       }
-      const newComment = new Comment({
+
+      const comment = await Comment.create({
         description,
-        owner,
-        reviewId,
-        timeStamp: new Date(),
-        userFullName,
-        userImgUrl,
+        author: userId,
+        reviewId: review.id,
       });
-      review.comments.push(newComment);
+
+      review.comments.push(comment.id);
+
       await review.save();
-      res.status(201).json({ message: "Comment added successfully", review });
+      res.status(201).json({ message: "Comment created successfully" });
     } catch (error) {
       console.error(error);
       res.status(500).json({ message: "Internal Server Error" });
-    }
-  }
-
-  async putCommentById(req: AuthRequest, res: Response) {
-    const commentId = req.params.id;
-    const { description, userFullName, userImgUrl } = req.body;
-    const reviewId = req.body.reviewId;
-
-    try {
-      const review = await Review.findOneAndUpdate(
-        { _id: reviewId, "comments._id": commentId },
-        {
-          $set: {
-            "comments.$.description": description,
-            "comments.$.userFullName": userFullName,
-            "comments.$.userImgUrl": userImgUrl,
-            "comments.$.timeStamp": new Date(),
-          },
-        },
-        { new: true }
-      );
-
-      if (!review) {
-        return res
-          .status(404)
-          .json({ message: "Review not found or Comment not in the review" });
-      }
-      res.status(200).json({ message: "Comment updated successfully", review });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: "Internal Server Error" });
-    }
-  }
-
-  // async deleteById(req: AuthRequest, res: Response) {
-  //   console.log("Delete Comment by Id:" + req.params.id);
-  //   super.deleteById(req, res);
-  // }
-
-  async deleteCommentById(req: AuthRequest, res: Response) {
-    const commentId = req.params.id; 
-    const reviewId = req.body.reviewId;
-
-    try {
-      const review = await Review.findByIdAndUpdate(
-        reviewId,
-        { $pull: { comments: { _id: commentId } } },
-        { new: true }
-      );
-
-      if (!review) {
-        return res.status(404).json({ message: 'Review not found or Comment not in the review' });
-      }
-
-      res.status(200).json({ message: 'Comment deleted successfully', review });
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({ message: 'Internal Server Error' });
     }
   }
 }

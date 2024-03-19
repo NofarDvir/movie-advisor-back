@@ -3,10 +3,11 @@ import initApp from "../app";
 import mongoose from "mongoose";
 import { Express } from "express";
 import User, { IUser } from "../models/user_model";
+import Review, { IReview } from "../models/review_model";
 
 let app: Express;
-let accessTokenCookie = "";
-let userId = "";
+let accessToken;
+let userId;
 
 const user: IUser = {
   fullName: "John Doe",
@@ -15,61 +16,49 @@ const user: IUser = {
   imgUrl: "https://www.google.com",
 };
 
-
 beforeAll(async () => {
   app = await initApp();
   console.log("beforeAll");
-  await User.deleteMany();
-
-  User.deleteMany({ 'email': user.email });
-  await request(app).post("/auth/register").send(user);
+  await User.deleteMany({ email: user.email });
   const response = await request(app).post("/auth/login").send(user);
   accessToken = response.body.accessToken;
+  userId = response.body._id;
 });
 
 afterAll(async () => {
   await mongoose.connection.close();
 });
 
-interface IUser {
-  name: string;
-  _id: string;
-}
-
-const User: IUser = {
-  name: "John Doe",
-  _id: "1234567890",
-};
-
-describe("User tests", () => {
-  const addUser = async (User: IUser) => {
-    const response = await request(app).post("/User")
-      .set("Authorization", "JWT " + accessToken)
-      .send(User);
-    expect(response.statusCode).toBe(201);
-  };
-  test("Test Get All Users - empty response", async () => {
-    const response = await request(app).get("/User").set("Authorization", "JWT " + accessToken);
-    expect(response.statusCode).toBe(200);
-    expect(response.body).toStrictEqual([]);
+describe("Get connected user tests", () => {
+    test('Should return 200 and the user data', async () => {
+      const response = await request(app)
+        .get('/users/connected')
+        .set('Cookie', [`access=${accessToken}`]);
+  
+      expect(response.statusCode).toBe(200);
+      expect(response.body).toHaveProperty('fullName');
+      expect(response.body).toHaveProperty('email');
+      expect(response.body).toHaveProperty('imgUrl');
+    });
   });
 
-  test("Test Post User", async () => {
-    addUser(User);
-  });
-
-  test("Test Get All Users with one User in DB", async () => {
-    const response = await request(app).get("/User").set("Authorization", "JWT " + accessToken);
-    expect(response.statusCode).toBe(200);
-    expect(response.body.length).toBe(1);
-    const st = response.body[0];
-    expect(st.name).toBe(User.name);
-    expect(st._id).toBe(User._id);
-  });
-
-  test("Test Post duplicate User", async () => {
-    const response = await request(app).post("/User").set("Authorization", "JWT " + accessToken).send(User);
-    expect(response.statusCode).toBe(406);
-  });
-
+  describe("Update user tests", () => {
+    test('Should return 200 and the updated user data', async () => {
+      const updatedUser = {
+        fullName: "Jane Doe",
+        email: "jane@student.com",
+        password: "0987654321",
+        imgUrl: "https://www.yahoo.com",
+      };
+  
+      const response = await request(app)
+        .put(`/users/`)
+        .send(updatedUser)
+        .set('Cookie', [`access=${accessToken}`]);
+  
+      expect(response.statusCode).toBe(200);
+      expect(response.body).toHaveProperty('fullName', updatedUser.fullName);
+      expect(response.body).toHaveProperty('email', updatedUser.email);
+      expect(response.body).toHaveProperty('imgUrl', updatedUser.imgUrl);
+    });
 });
