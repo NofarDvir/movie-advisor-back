@@ -10,7 +10,7 @@ initApp().then((app) => {
     definition: {
       openapi: "3.0.0",
       info: {
-        title: "Movie Advisor REST API",
+        title: "WatchIt! REST API",
         version: "1.0.1",
         description:
           "REST server including authentication using JWT and refresh token",
@@ -30,7 +30,7 @@ initApp().then((app) => {
       key: fs.readFileSync("./client-key.pem"),
       cert: fs.readFileSync("./client-cert.pem"),
     };
-    https.createServer(options, app).listen(process.env.HTTPS_PORT);
     console.log("listen on PORT: " + process.env.HTTPS_PORT);
+    https.createServer(options, app).listen(process.env.HTTPS_PORT);
   }
 });
