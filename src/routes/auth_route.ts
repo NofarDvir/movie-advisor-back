@@ -3,65 +3,9 @@ const router = express.Router();
 import authController from "../controllers/auth_controller";
 /**
  * @swagger
- * components:
- *   securitySchemes:
- *     bearerAuth:
- *       type: http
- *       scheme: bearer
- *       bearerFormat: JWT
  * tags:
  *     name: Auth
  *     description: The Authentication API
- */
-
-/**
- * @swagger
- * components:
- *   schemas:
- *      User:
- *        type: object
- *        required:
- *          - email
- *          - password
- *        properties:
- *          fullName:
- *            type: string
- *            description: The user full name
- *          email:
- *             type: string
- *             description: The user email
- *          password:
- *            type: string
- *            description: The user password
- *          imgUrl:
- *            type: string
- *            description: The user profile image url
- *        example:
- *          fullName: 'Bob Smith'
- *          email: 'bob@gmail.com'
- *          password: '123456'
- *          imgUrl: 'https://www.google.com/image.png'
- */
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     Tokens:
- *       type: object
- *       required:
- *         - accessToken
- *         - refreshToken
- *       properties:
- *         accessToken:
- *           type: string
- *           description: The JWT access token
- *         refreshToken:
- *           type: string
- *           description: The JWT refresh token
- *       example:
- *           accessToken: '123cd123x1xx1'
- *           refreshToken: '134r2134cr1x3c'
  */
 
 /**
@@ -75,7 +19,14 @@ import authController from "../controllers/auth_controller";
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/User'
+ *             type: object
+ *             properties:
+ *               fullName:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
  *     responses:
  *       200:
  *         description: The user was successfully created
@@ -132,14 +83,19 @@ router.post("/google", authController.googleSignin);
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/User'
+ *             type: object
+ *             properties:
+ *               email:
+ *                 type: string
+ *               password:
+ *                 type: string
  *     responses:
  *       200:
- *         description: The acess & refresh tokens
+ *         description: The user was successfully authenticated
  *         content:
  *           application/json:
  *             schema:
- *               $ref: '#/components/schemas/Tokens'
+ *               $ref: '#/components/schemas/User'
  *       400:
  *         description: Some parameters are missing or invalid
  *       500:
@@ -154,9 +110,6 @@ router.post("/login", authController.login);
  *   get:
  *     summary: Log out a user
  *     tags: [Auth]
- *     description: need to provide the refresh token in the auth header
- *     security:
- *        - bearerAuth: []
  *     responses:
  *       200:
  *         description: The user was successfully logged out
@@ -178,7 +131,10 @@ router.get("/logout", authController.logout);
  *         content:
  *           application/json:
  *             schema:
-*                $ref: '#/components/schemas/Tokens'
+ *               type: object
+ *               properties:
+ *                 accessToken:
+ *                   type: string
  *       401:
  *         description: Unauthorized, invalid or expired token
  *       500:
