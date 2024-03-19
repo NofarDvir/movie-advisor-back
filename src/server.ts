@@ -31,5 +31,6 @@ initApp().then((app) => {
       cert: fs.readFileSync("./client-cert.pem"),
     };
     https.createServer(options, app).listen(process.env.HTTPS_PORT);
+    console.log("listen on PORT: " + process.env.HTTPS_PORT);
   }
 });
